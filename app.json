@@ -1,7 +1,8 @@
 {
   "expo": {
     "name": "PE_MMA",
-    "slug": "PE_MMA",
+    "slug": "pe-mma",
+    "owner": "nha1905",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -25,6 +26,11 @@
     "plugins": [
       "expo-font",
       "expo-status-bar"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "ddc2f2cf-82f1-44f2-a48f-28bd1f860d4f"
+      }
+    }
   }
 }
