@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() { return request.auth != null; }
+    function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
+
+    function isRequiredString(val, maxLen) {
+      return val is string && val.trim().size() > 0 && val.size() <= maxLen;
+    }
+    function isOptionalString(data, field, maxLen) {
+      return !(field in data) || data[field] == null || (data[field] is string && data[field].size() <= maxLen);
+    }
+    function isValidEnum(val, list) { return val is string && val in list; }
+    function isOptionalIntRange(data, field, min, max) {
+      return !(field in data) || data[field] == null || (data[field] is int && data[field] >= min && data[field] <= max);
+    }
+    function isOptionalBool(data, field) { return !(field in data) || data[field] is bool; }
+
+    function isValidData(data) {
+      return isRequiredString(data.title, 100) &&
+             isRequiredString(data.author, 100) &&
+             isOptionalString(data, 'genre', 50) &&
+             isOptionalString(data, 'description', 500) &&
+             isOptionalIntRange(data, 'year', 1000, 3000) &&
+             isOptionalBool(data, 'isFavorite');
+    }
+
+    // Áp dụng cho collection của đề bài (ví dụ: books)
+    match /books/{docId} {
+      allow read, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isValidData(request.resource.data);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId) && isValidData(request.resource.data);
+    }
+  }
+}
