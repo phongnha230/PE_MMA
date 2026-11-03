@@ -6,19 +6,24 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { AuthStack } from '@/core/navigation/AuthStack';
 import { AppStack } from '@/core/navigation/AppStack';
 import { Skeleton } from '@/shared/components/feedback/Skeleton';
-import { colors, radius, spacing, typography } from '@/shared/theme';
+import { getTheme, radius, spacing, typography } from '@/shared/theme';
 
 export const RootNavigator: React.FC = () => {
   const { user, loading } = useAuth();
+  const theme = getTheme('movie');
 
+  // Chống flash giao diện trong lúc kiểm tra phiên đăng nhập
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
         <View style={styles.splashCard}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="book" size={42} color={colors.primary} />
+          <View style={[styles.iconCircle, { backgroundColor: theme.primaryLight }]}>
+            <Ionicons name="film" size={40} color={theme.primary} />
           </View>
-          <Text style={styles.splashText}>Loading Library...</Text>
+          <Text style={[styles.splashTitle, { color: theme.text }]}>CineList</Text>
+          <Text style={[styles.splashText, { color: theme.textMuted }]}>
+            Initializing watchlist...
+          </Text>
           <Skeleton width={140} height={10} borderRadius={radius.full} style={styles.skeletonBar} />
         </View>
       </View>
@@ -37,7 +42,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.background,
   },
   splashCard: {
     alignItems: 'center',
@@ -47,14 +51,18 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: radius.full,
-    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
+  splashTitle: {
+    ...typography.h2,
+    fontSize: 24,
+    fontWeight: '900',
+    marginBottom: 4,
+  },
   splashText: {
     ...typography.captionBold,
-    color: colors.textMuted,
     marginBottom: spacing.md,
   },
   skeletonBar: {

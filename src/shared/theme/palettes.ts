@@ -145,7 +145,31 @@ export const ThemePalettes: Record<string, ThemePalette> = {
     buttonShadow: createColoredShadow('#18181B', 6, 0.25, 4),
   },
 
-  // 📚 6. CHỦ ĐỀ MẶC ĐỊNH / HỌC TẬP / GHI CHÚ / TASK (EDUCATION & NOTES)
+  // 🎬 6. CHỦ ĐỀ PHIM ẢNH / CINEMA / MOVIE WATCHLIST (ENTERTAINMENT)
+  movie: {
+    name: 'Cinema & Movies',
+    tag: '🎬 Phim ảnh & Điện ảnh',
+    primary: '#E11D48',        // Đỏ Ruby điện ảnh quyến rũ
+    primaryLight: '#FFE4E6',   // Hồng phấn nhạt
+    primaryDark: '#9F1239',
+    background: '#F8FAFC',     // Nền slate thanh lịch
+    card: '#FFFFFF',
+    cardBorder: '#E2E8F0',     // Viền slate nhẹ
+    text: '#0F172A',           // Đen than sâu
+    textMuted: '#64748B',
+    accent: '#F59E0B',         // Vàng ánh kim ngôi sao xếp hạng
+    buttonBg: '#E11D48',
+    buttonText: '#FFFFFF',
+    badgeBg: '#FFE4E6',
+    badgeText: '#BE123C',
+    inputBg: '#FFFFFF',
+    inputBorder: '#E2E8F0',
+    inputFocusedBorder: '#E11D48',
+    cardShadow: Shadows.warmGlow,
+    buttonShadow: createColoredShadow('#E11D48', 6, 0.3, 4),
+  },
+
+  // 📚 7. CHỦ ĐỀ MẶC ĐỊNH / HỌC TẬP / GHI CHÚ / TASK (EDUCATION & NOTES)
   default: {
     name: 'Default Blue',
     tag: '📚 Học tập & Quản lý',
@@ -189,6 +213,9 @@ export const getTheme = (topic: string = 'default'): ThemePalette => {
   }
   if (key.includes('shop') || key.includes('thời trang') || key.includes('store') || key.includes('hàng')) {
     return ThemePalettes.ecommerce;
+  }
+  if (key.includes('movie') || key.includes('film') || key.includes('cinema') || key.includes('cine') || key.includes('phim')) {
+    return ThemePalettes.movie;
   }
   return ThemePalettes.default;
 };

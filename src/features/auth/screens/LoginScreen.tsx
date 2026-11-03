@@ -16,13 +16,14 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { CustomTextInput } from '@/shared/components/inputs/CustomTextInput';
 import { Button } from '@/shared/components/buttons/Button';
 import { ErrorBanner } from '@/shared/components/feedback/ErrorBanner';
-import { colors, radius, spacing, typography } from '@/shared/theme';
+import { getTheme, radius, spacing, typography } from '@/shared/theme';
 import { APP_CONSTANTS } from '@/shared/constants/appConstants';
 import { validateEmail, validatePassword } from '@/shared/utils/validators';
 import { haptics } from '@/shared/utils/haptics';
 
 export const LoginScreen: React.FC = () => {
   const navigation = useNavigation<AuthNavigationProp<'Login'>>();
+  const theme = getTheme('movie');
   const { login } = useAuth();
 
   const [email, setEmail] = useState('');
@@ -48,7 +49,7 @@ export const LoginScreen: React.FC = () => {
     if (hasSubmitted) {
       setErrors((prev) => ({
         ...prev,
-        password: validatePassword(val),
+        password: validatePassword(val, false),
       }));
       setAuthError(null);
     }
@@ -59,7 +60,7 @@ export const LoginScreen: React.FC = () => {
     setAuthError(null);
 
     const emailErr = validateEmail(email);
-    const passErr = validatePassword(password);
+    const passErr = validatePassword(password, false);
 
     setErrors({ email: emailErr, password: passErr });
 
@@ -74,14 +75,19 @@ export const LoginScreen: React.FC = () => {
       haptics.notificationSuccess();
     } catch (err: any) {
       haptics.notificationError();
-      setAuthError(err.message || APP_CONSTANTS.ERROR_MESSAGES.LOGIN_FAILED);
+      const rawMsg = err.message || '';
+      if (rawMsg.includes('invalid-credential') || rawMsg.includes('wrong-password') || rawMsg.includes('user-not-found')) {
+        setAuthError('Invalid email or password');
+      } else {
+        setAuthError(err.message || APP_CONSTANTS.ERROR_MESSAGES.LOGIN_FAILED);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -92,26 +98,36 @@ export const LoginScreen: React.FC = () => {
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
+          {/* Header Back to Home */}
+          <TouchableOpacity
+            style={styles.backHomeBtn}
+            onPress={() => navigation.navigate('Home')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="arrow-back" size={22} color={theme.text} />
+            <Text style={[styles.backHomeText, { color: theme.text }]}>Back to Home</Text>
+          </TouchableOpacity>
+
           {/* Header Brand Section */}
           <View style={styles.brandSection}>
-            <View style={styles.iconOuter}>
-              <View style={styles.iconInner}>
-                <Ionicons name="book" size={36} color={colors.primary} />
+            <View style={[styles.iconOuter, { backgroundColor: theme.primaryLight }]}>
+              <View style={[styles.iconInner, { backgroundColor: '#FFFFFF' }]}>
+                <Ionicons name="film" size={36} color={theme.primary} />
               </View>
             </View>
-            <View style={styles.badgeContainer}>
-              <Text style={styles.badgeText}>PRM392 • Library Hub</Text>
+            <View style={[styles.badgeContainer, { backgroundColor: theme.primaryLight }]}>
+              <Text style={[styles.badgeText, { color: theme.primaryDark }]}>CineList • Cinema Hub</Text>
             </View>
-            <Text style={styles.welcomeTitle}>Welcome Back</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Sign in to manage and sync your collection
+            <Text style={[styles.welcomeTitle, { color: theme.text }]}>Welcome Back</Text>
+            <Text style={[styles.welcomeSubtitle, { color: theme.textMuted }]}>
+              Sign in to manage your private movie watchlist
             </Text>
           </View>
 
           {/* Segmented Auth Switcher (Pill Rounded) */}
           <View style={styles.switcherContainer}>
-            <View style={[styles.switchTab, styles.switchTabActive]}>
-              <Text style={[styles.switchTabText, styles.switchTabTextActive]}>
+            <View style={[styles.switchTab, { backgroundColor: theme.primary }]}>
+              <Text style={[styles.switchTabText, { color: '#FFFFFF', fontWeight: '700' }]}>
                 Sign In
               </Text>
             </View>
@@ -123,13 +139,14 @@ export const LoginScreen: React.FC = () => {
               }}
               activeOpacity={0.7}
             >
-              <Text style={styles.switchTabText}>Register</Text>
+              <Text style={[styles.switchTabText, { color: theme.textMuted }]}>Register</Text>
             </TouchableOpacity>
           </View>
 
           {/* Form Card */}
-          <View style={styles.formCard}>
-            <ErrorBanner message={authError} />
+          <View style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }, theme.cardShadow]}>
+            {/* EXACT TESTID: error-auth */}
+            <ErrorBanner testID={APP_CONSTANTS.TEST_IDS.ERROR_AUTH} message={authError} />
 
             <CustomTextInput
               testID={APP_CONSTANTS.TEST_IDS.EMAIL_INPUT}
@@ -149,34 +166,29 @@ export const LoginScreen: React.FC = () => {
               label="Password"
               placeholder="Enter your password"
               leftIcon="lock-closed-outline"
-              isPassword
+              secureTextEntry
               required
               value={password}
               onChangeText={handlePasswordChange}
               error={hasSubmitted ? errors.password : null}
             />
 
+            {/* Submit Button (Pill Rounded & Centered) */}
             <Button
               testID={APP_CONSTANTS.TEST_IDS.LOGIN_BUTTON}
-              title="Sign In to Library"
+              title="Sign In"
               onPress={handleLogin}
               loading={submitting}
-              size="lg"
-              style={styles.submitButton}
+              variant="primary"
+              style={[styles.submitButton, { backgroundColor: theme.primary }]}
             />
           </View>
 
-          {/* Footer Navigation */}
+          {/* Footer Note */}
           <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity
-              onPress={() => {
-                haptics.selection();
-                navigation.navigate('Register');
-              }}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Text style={styles.footerLink}>Create One</Text>
+            <Text style={[styles.footerText, { color: theme.textMuted }]}>Don't have an account?</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={[styles.footerLink, { color: theme.primary }]}> Create one</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -188,75 +200,75 @@ export const LoginScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    justifyContent: 'center',
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xxl,
+  },
+  backHomeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  backHomeText: {
+    ...typography.captionBold,
+    fontSize: 13,
   },
   brandSection: {
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
   iconOuter: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: '#DBEAFE',
+    width: 80,
+    height: 80,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
+    marginBottom: spacing.sm,
   },
   iconInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: colors.white,
+    width: 64,
+    height: 64,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeContainer: {
-    backgroundColor: '#E0E7FF',
-    paddingVertical: 3,
     paddingHorizontal: spacing.md,
+    paddingVertical: 4,
     borderRadius: radius.full,
     marginBottom: spacing.xs,
   },
   badgeText: {
-    ...typography.small,
-    color: '#4338CA',
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    ...typography.captionBold,
+    fontSize: 12,
   },
   welcomeTitle: {
     ...typography.h1,
-    color: colors.text,
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: 4,
     textAlign: 'center',
-    marginTop: 4,
   },
   welcomeSubtitle: {
     ...typography.caption,
-    color: colors.textMuted,
     textAlign: 'center',
-    marginTop: 4,
-    maxWidth: 280,
+    paddingHorizontal: spacing.md,
+    fontSize: 13,
   },
   switcherContainer: {
     flexDirection: 'row',
     backgroundColor: '#E2E8F0',
     borderRadius: radius.full,
     padding: 4,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   switchTab: {
     flex: 1,
@@ -265,57 +277,32 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.full,
   },
-  switchTabActive: {
-    backgroundColor: colors.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-  },
   switchTabText: {
     ...typography.captionBold,
-    color: colors.textMuted,
-  },
-  switchTabTextActive: {
-    color: colors.primary,
+    fontSize: 14,
   },
   formCard: {
-    backgroundColor: colors.white,
     borderRadius: radius.xl,
-    padding: spacing.xl,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   submitButton: {
-    marginTop: spacing.sm,
-    backgroundColor: colors.primary,
+    marginTop: spacing.md,
+    height: 50,
     borderRadius: radius.full,
-    minHeight: 52,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: spacing.xl,
-    minHeight: 44,
   },
   footerText: {
-    ...typography.body,
-    color: colors.textMuted,
+    ...typography.caption,
+    fontSize: 13,
   },
   footerLink: {
-    ...typography.bodyBold,
-    color: colors.primary,
+    ...typography.captionBold,
+    fontSize: 13,
   },
 });

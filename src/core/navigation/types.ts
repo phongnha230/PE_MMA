@@ -2,12 +2,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
 
 export type AuthStackParamList = {
+  Home: undefined;
   Login: undefined;
   Register: undefined;
 };
 
 export type AppStackParamList = {
-  Home: undefined;
+  MovieList: undefined;
+  MovieDetail: { movieId: string };
 };
 
 export type AuthNavigationProp<RouteName extends keyof AuthStackParamList> =

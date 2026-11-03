@@ -1,35 +1,48 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function isAuthenticated() { return request.auth != null; }
-    function isOwner(userId) { return isAuthenticated() && request.auth.uid == userId; }
+    // 1. Hàm kiểm tra đăng nhập & quyền sở hữu
+    function isAuthenticated() {
+      return request.auth != null;
+    }
 
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 2. Các hàm kiểm tra kiểu dữ liệu & ràng buộc
     function isRequiredString(val, maxLen) {
       return val is string && val.trim().size() > 0 && val.size() <= maxLen;
     }
+
     function isOptionalString(data, field, maxLen) {
       return !(field in data) || data[field] == null || (data[field] is string && data[field].size() <= maxLen);
     }
-    function isValidEnum(val, list) { return val is string && val in list; }
-    function isOptionalIntRange(data, field, min, max) {
-      return !(field in data) || data[field] == null || (data[field] is int && data[field] >= min && data[field] <= max);
-    }
-    function isOptionalBool(data, field) { return !(field in data) || data[field] is bool; }
 
-    function isValidData(data) {
+    function isOptionalIntRange(data, field, minVal, maxVal) {
+      return !(field in data) || data[field] == null || (data[field] is int && data[field] >= minVal && data[field] <= maxVal);
+    }
+
+    function isOptionalBool(data, field) {
+      return !(field in data) || data[field] is bool;
+    }
+
+    // 3. Quy tắc hợp lệ dữ liệu thực thể Movie theo đúng đề thi MMA301 CineList
+    function isValidMovie(data) {
       return isRequiredString(data.title, 100) &&
-             isRequiredString(data.author, 100) &&
-             isOptionalString(data, 'genre', 50) &&
-             isOptionalString(data, 'description', 500) &&
-             isOptionalIntRange(data, 'year', 1000, 3000) &&
-             isOptionalBool(data, 'isFavorite');
+             isRequiredString(data.director, 60) &&
+             (data.genre in ['Action', 'Comedy', 'Drama', 'Horror']) &&
+             (data.status in ['Plan to Watch', 'Watching', 'Watched']) &&
+             isOptionalIntRange(data, 'rating', 0, 5) &&
+             isOptionalBool(data, 'favorite') &&
+             isOptionalString(data, 'notes', 300);
     }
 
-    // Áp dụng cho collection của đề bài (ví dụ: books)
-    match /books/{docId} {
+    // 4. Áp dụng cho duy nhất collection movies
+    match /movies/{docId} {
       allow read, delete: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId) && isValidData(request.resource.data);
-      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId) && isValidData(request.resource.data);
+      allow create: if isOwner(request.resource.data.userId) && isValidMovie(request.resource.data);
+      allow update: if isOwner(resource.data.userId) && isOwner(request.resource.data.userId) && isValidMovie(request.resource.data);
     }
   }
 }

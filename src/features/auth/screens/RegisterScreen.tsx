@@ -16,7 +16,7 @@ import { useAuth } from '@/features/auth/hooks/useAuth';
 import { CustomTextInput } from '@/shared/components/inputs/CustomTextInput';
 import { Button } from '@/shared/components/buttons/Button';
 import { ErrorBanner } from '@/shared/components/feedback/ErrorBanner';
-import { colors, radius, spacing, typography } from '@/shared/theme';
+import { getTheme, radius, spacing, typography } from '@/shared/theme';
 import { APP_CONSTANTS } from '@/shared/constants/appConstants';
 import {
   validateEmail,
@@ -27,11 +27,13 @@ import { haptics } from '@/shared/utils/haptics';
 
 export const RegisterScreen: React.FC = () => {
   const navigation = useNavigation<AuthNavigationProp<'Register'>>();
+  const theme = getTheme('movie');
   const { register } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [errors, setErrors] = useState<{
     email?: string | null;
@@ -39,6 +41,7 @@ export const RegisterScreen: React.FC = () => {
     confirmPassword?: string | null;
   }>({});
   const [authError, setAuthError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleEmailChange = (val: string) => {
@@ -57,7 +60,7 @@ export const RegisterScreen: React.FC = () => {
     if (hasSubmitted) {
       setErrors((prev) => ({
         ...prev,
-        password: validatePassword(val),
+        password: validatePassword(val, true),
         confirmPassword: validateConfirmPassword(val, confirmPassword),
       }));
       setAuthError(null);
@@ -78,9 +81,10 @@ export const RegisterScreen: React.FC = () => {
   const handleRegister = async () => {
     setHasSubmitted(true);
     setAuthError(null);
+    setSuccessMessage(null);
 
     const emailErr = validateEmail(email);
-    const passErr = validatePassword(password);
+    const passErr = validatePassword(password, true); // isRegister = true: enforces min 6 chars
     const confirmErr = validateConfirmPassword(password, confirmPassword);
 
     setErrors({
@@ -98,16 +102,23 @@ export const RegisterScreen: React.FC = () => {
       setSubmitting(true);
       await register(email, password);
       haptics.notificationSuccess();
+      // EXACT TEXT: Registration successful
+      setSuccessMessage(APP_CONSTANTS.ERROR_MESSAGES.REGISTRATION_SUCCESS);
     } catch (err: any) {
       haptics.notificationError();
-      setAuthError(err.message || APP_CONSTANTS.ERROR_MESSAGES.REGISTER_FAILED);
+      const rawMsg = err.message || '';
+      if (rawMsg.includes('email-already-in-use')) {
+        setAuthError('Email already in use. Please use another email or sign in.');
+      } else {
+        setAuthError(err.message || APP_CONSTANTS.ERROR_MESSAGES.REGISTER_FAILED);
+      }
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right', 'bottom']}>
       <KeyboardAvoidingView
         style={styles.keyboardView}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -118,19 +129,29 @@ export const RegisterScreen: React.FC = () => {
           keyboardDismissMode="on-drag"
           showsVerticalScrollIndicator={false}
         >
+          {/* Header Back to Home */}
+          <TouchableOpacity
+            style={styles.backHomeBtn}
+            onPress={() => navigation.navigate('Home')}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="arrow-back" size={22} color={theme.text} />
+            <Text style={[styles.backHomeText, { color: theme.text }]}>Back to Home</Text>
+          </TouchableOpacity>
+
           {/* Header Brand Section */}
           <View style={styles.brandSection}>
-            <View style={styles.iconOuter}>
-              <View style={styles.iconInner}>
-                <Ionicons name="person-add" size={34} color={colors.primary} />
+            <View style={[styles.iconOuter, { backgroundColor: theme.primaryLight }]}>
+              <View style={[styles.iconInner, { backgroundColor: '#FFFFFF' }]}>
+                <Ionicons name="film" size={36} color={theme.primary} />
               </View>
             </View>
-            <View style={styles.badgeContainer}>
-              <Text style={styles.badgeText}>New Membership</Text>
+            <View style={[styles.badgeContainer, { backgroundColor: theme.primaryLight }]}>
+              <Text style={[styles.badgeText, { color: theme.primaryDark }]}>CineList • Free Account</Text>
             </View>
-            <Text style={styles.welcomeTitle}>Create Account</Text>
-            <Text style={styles.welcomeSubtitle}>
-              Get your free account to organize your items
+            <Text style={[styles.welcomeTitle, { color: theme.text }]}>Create Account</Text>
+            <Text style={[styles.welcomeSubtitle, { color: theme.textMuted }]}>
+              Get your personal movie watchlist and sync across devices
             </Text>
           </View>
 
@@ -144,18 +165,29 @@ export const RegisterScreen: React.FC = () => {
               }}
               activeOpacity={0.7}
             >
-              <Text style={styles.switchTabText}>Sign In</Text>
+              <Text style={[styles.switchTabText, { color: theme.textMuted }]}>Sign In</Text>
             </TouchableOpacity>
-            <View style={[styles.switchTab, styles.switchTabActive]}>
-              <Text style={[styles.switchTabText, styles.switchTabTextActive]}>
+            <View style={[styles.switchTab, { backgroundColor: theme.primary }]}>
+              <Text style={[styles.switchTabText, { color: '#FFFFFF', fontWeight: '700' }]}>
                 Register
               </Text>
             </View>
           </View>
 
           {/* Form Card */}
-          <View style={styles.formCard}>
-            <ErrorBanner message={authError} />
+          <View style={[styles.formCard, { backgroundColor: theme.card, borderColor: theme.cardBorder }, theme.cardShadow]}>
+            {/* EXACT TESTID: form-success */}
+            {successMessage && (
+              <View style={styles.successBanner}>
+                <Ionicons name="checkmark-circle" size={18} color="#16A34A" />
+                <Text testID={APP_CONSTANTS.TEST_IDS.FORM_SUCCESS} style={styles.successText}>
+                  {successMessage}
+                </Text>
+              </View>
+            )}
+
+            {/* EXACT TESTID: error-auth */}
+            <ErrorBanner testID={APP_CONSTANTS.TEST_IDS.ERROR_AUTH} message={authError} />
 
             <CustomTextInput
               testID={APP_CONSTANTS.TEST_IDS.EMAIL_INPUT}
@@ -175,7 +207,7 @@ export const RegisterScreen: React.FC = () => {
               label="Password"
               placeholder="At least 6 characters"
               leftIcon="lock-closed-outline"
-              isPassword
+              secureTextEntry
               required
               value={password}
               onChangeText={handlePasswordChange}
@@ -187,34 +219,29 @@ export const RegisterScreen: React.FC = () => {
               label="Confirm Password"
               placeholder="Re-enter your password"
               leftIcon="shield-checkmark-outline"
-              isPassword
+              secureTextEntry
               required
               value={confirmPassword}
               onChangeText={handleConfirmPasswordChange}
               error={hasSubmitted ? errors.confirmPassword : null}
             />
 
+            {/* Submit Button (Pill Rounded & Centered) */}
             <Button
               testID={APP_CONSTANTS.TEST_IDS.REGISTER_BUTTON}
-              title="Create Account & Enter"
+              title="Create Account"
               onPress={handleRegister}
               loading={submitting}
-              size="lg"
-              style={styles.submitButton}
+              variant="primary"
+              style={[styles.submitButton, { backgroundColor: theme.primary }]}
             />
           </View>
 
-          {/* Footer Navigation */}
+          {/* Footer Note */}
           <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity
-              onPress={() => {
-                haptics.selection();
-                navigation.navigate('Login');
-              }}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            >
-              <Text style={styles.footerLink}>Sign In</Text>
+            <Text style={[styles.footerText, { color: theme.textMuted }]}>Already have an account?</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={[styles.footerLink, { color: theme.primary }]}> Sign In</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -226,75 +253,75 @@ export const RegisterScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F1F5F9',
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.xxxl,
-    justifyContent: 'center',
+    flexGrow: 1,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xxl,
+  },
+  backHomeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  backHomeText: {
+    ...typography.captionBold,
+    fontSize: 13,
   },
   brandSection: {
     alignItems: 'center',
     marginBottom: spacing.lg,
   },
   iconOuter: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    backgroundColor: '#DBEAFE',
+    width: 80,
+    height: 80,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.md,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
+    marginBottom: spacing.sm,
   },
   iconInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: colors.white,
+    width: 64,
+    height: 64,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeContainer: {
-    backgroundColor: '#E0E7FF',
-    paddingVertical: 3,
     paddingHorizontal: spacing.md,
+    paddingVertical: 4,
     borderRadius: radius.full,
     marginBottom: spacing.xs,
   },
   badgeText: {
-    ...typography.small,
-    color: '#4338CA',
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    ...typography.captionBold,
+    fontSize: 12,
   },
   welcomeTitle: {
     ...typography.h1,
-    color: colors.text,
+    fontSize: 26,
+    fontWeight: '800',
+    marginBottom: 4,
     textAlign: 'center',
-    marginTop: 4,
   },
   welcomeSubtitle: {
     ...typography.caption,
-    color: colors.textMuted,
     textAlign: 'center',
-    marginTop: 4,
-    maxWidth: 290,
+    paddingHorizontal: spacing.md,
+    fontSize: 13,
   },
   switcherContainer: {
     flexDirection: 'row',
     backgroundColor: '#E2E8F0',
     borderRadius: radius.full,
     padding: 4,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   switchTab: {
     flex: 1,
@@ -303,57 +330,48 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.full,
   },
-  switchTabActive: {
-    backgroundColor: colors.white,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
-  },
   switchTabText: {
     ...typography.captionBold,
-    color: colors.textMuted,
-  },
-  switchTabTextActive: {
-    color: colors.primary,
+    fontSize: 14,
   },
   formCard: {
-    backgroundColor: colors.white,
     borderRadius: radius.xl,
-    padding: spacing.xl,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    padding: spacing.lg,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+  },
+  successBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#DCFCE7',
+    borderWidth: 1,
+    borderColor: '#86EFAC',
+    borderRadius: radius.md,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+    gap: spacing.xs,
+  },
+  successText: {
+    ...typography.captionBold,
+    color: '#15803D',
+    flex: 1,
   },
   submitButton: {
-    marginTop: spacing.sm,
-    backgroundColor: colors.primary,
+    marginTop: spacing.md,
+    height: 50,
     borderRadius: radius.full,
-    minHeight: 52,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 6,
-    elevation: 3,
   },
   footerRow: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: spacing.xl,
-    minHeight: 44,
   },
   footerText: {
-    ...typography.body,
-    color: colors.textMuted,
+    ...typography.caption,
+    fontSize: 13,
   },
   footerLink: {
-    ...typography.bodyBold,
-    color: colors.primary,
+    ...typography.captionBold,
+    fontSize: 13,
   },
 });

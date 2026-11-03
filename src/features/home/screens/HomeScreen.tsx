@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -8,132 +8,151 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/features/auth/hooks/useAuth';
-import { colors, radius, spacing, typography } from '@/shared/theme';
+import { useNavigation } from '@react-navigation/native';
+import { AuthNavigationProp } from '@/core/navigation/types';
 import { APP_CONSTANTS } from '@/shared/constants/appConstants';
-import { haptics } from '@/shared/utils/haptics';
-import { ConfirmDialog } from '@/shared/components/feedback/ConfirmDialog';
+import { getTheme, radius, spacing, typography } from '@/shared/theme';
 
 export const HomeScreen: React.FC = () => {
-  const { user, logout } = useAuth();
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  const handleOpenLogout = () => {
-    haptics.notificationWarning();
-    setShowLogoutModal(true);
-  };
-
-  const handleConfirmLogout = async () => {
-    try {
-      setLoggingOut(true);
-      await logout();
-    } finally {
-      setLoggingOut(false);
-      setShowLogoutModal(false);
-    }
-  };
-
-  const username = user?.email ? user.email.split('@')[0] : 'Developer';
+  const navigation = useNavigation<AuthNavigationProp<'Home'>>();
+  const theme = getTheme('movie');
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-      <ScrollView
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Top Header Bar */}
-        <View style={styles.topBar}>
-          <View style={styles.userProfile}>
-            <View style={styles.avatarCircle}>
-              <Ionicons name="person" size={24} color={colors.primary} />
-            </View>
-            <View>
-              <Text style={styles.greetingText}>Welcome back,</Text>
-              <Text style={styles.usernameText}>{username}</Text>
-            </View>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
+      {/* Top Header with App Name + Login & Register buttons */}
+      <View style={[styles.topHeader, { borderBottomColor: theme.cardBorder }]}>
+        <View style={styles.brandRow}>
+          <View style={[styles.logoBadge, { backgroundColor: theme.primaryLight }]}>
+            <Ionicons name="film" size={20} color={theme.primary} />
           </View>
+          <Text style={[styles.headerAppName, { color: theme.text }]}>CineList</Text>
+        </View>
+
+        <View style={styles.headerAuthButtons}>
+          <TouchableOpacity
+            testID={APP_CONSTANTS.TEST_IDS.LOGIN_BUTTON}
+            style={[styles.headerLoginBtn, { borderColor: theme.cardBorder }]}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={[styles.headerLoginText, { color: theme.text }]}>Login</Text>
+          </TouchableOpacity>
 
           <TouchableOpacity
-            testID={APP_CONSTANTS.TEST_IDS.LOGOUT_BUTTON}
-            style={styles.logoutButton}
-            onPress={handleOpenLogout}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            activeOpacity={0.7}
+            testID={APP_CONSTANTS.TEST_IDS.REGISTER_BUTTON}
+            style={[styles.headerRegisterBtn, { backgroundColor: theme.primary }]}
+            onPress={() => navigation.navigate('Register')}
           >
-            <Ionicons name="log-out-outline" size={22} color={colors.error} />
+            <Text style={styles.headerRegisterText}>Register</Text>
           </TouchableOpacity>
         </View>
+      </View>
 
-        {/* Hero Card: Hello World */}
-        <View style={styles.heroCard}>
-          <View style={styles.heroIconBadge}>
-            <Text style={styles.heroEmoji}>👋</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Hero Section */}
+        <View style={styles.heroSection}>
+          <View style={[styles.heroIconCircle, { backgroundColor: theme.primaryLight }]}>
+            <Ionicons name="videocam" size={44} color={theme.primary} />
           </View>
-          <Text style={styles.heroTitle}>Hello World!</Text>
-          <Text style={styles.heroSubtitle}>
-            Hệ thống xác thực Firebase đã sẵn sàng. Bạn đang ở màn hình Trang chủ chính.
+
+          {/* QUY TẮC BẮT BUỘC: testID home-title VỚI NỘI DUNG TEXT CHÍNH XÁC: CineList */}
+          <Text testID={APP_CONSTANTS.TEST_IDS.HOME_TITLE} style={[styles.homeTitle, { color: theme.text }]}>
+            CineList
           </Text>
 
-          <View style={styles.accountInfoBox}>
-            <View style={styles.infoRow}>
-              <Ionicons name="mail" size={16} color={colors.primary} style={styles.infoIcon} />
-              <Text style={styles.infoLabel}>Email:</Text>
-              <Text style={styles.infoValue} numberOfLines={1}>{user?.email}</Text>
+          <Text style={[styles.homeDescription, { color: theme.textMuted }]}>
+            Your private cinematic sanctuary. Keep track of what you watch, organize your favorite directors and genres, and never miss a masterpiece again.
+          </Text>
+        </View>
+
+        {/* Feature Cards Section (At least 3 feature cards) */}
+        <View style={styles.featuresSection}>
+          <Text style={[styles.sectionHeading, { color: theme.text }]}>
+            Key Features
+          </Text>
+
+          {/* Feature Card 1 */}
+          <View
+            style={[
+              styles.featureCard,
+              { backgroundColor: theme.card, borderColor: theme.cardBorder },
+              theme.cardShadow,
+            ]}
+          >
+            <View style={[styles.featureIconBadge, { backgroundColor: '#FEE2E2' }]}>
+              <Ionicons name="list" size={22} color="#EF4444" />
             </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="key" size={16} color={colors.primary} style={styles.infoIcon} />
-              <Text style={styles.infoLabel}>UID:</Text>
-              <Text style={styles.infoValue} numberOfLines={1}>{user?.uid}</Text>
+            <View style={styles.featureContent}>
+              <Text style={[styles.featureTitle, { color: theme.text }]}>
+                Track what you watch
+              </Text>
+              <Text style={[styles.featureDesc, { color: theme.textMuted }]}>
+                Record directors, custom genres, personal reflections, and detailed review notes for every movie.
+              </Text>
+            </View>
+          </View>
+
+          {/* Feature Card 2 */}
+          <View
+            style={[
+              styles.featureCard,
+              { backgroundColor: theme.card, borderColor: theme.cardBorder },
+              theme.cardShadow,
+            ]}
+          >
+            <View style={[styles.featureIconBadge, { backgroundColor: '#DBEAFE' }]}>
+              <Ionicons name="layers" size={22} color="#2563EB" />
+            </View>
+            <View style={styles.featureContent}>
+              <Text style={[styles.featureTitle, { color: theme.text }]}>
+                Sort by status
+              </Text>
+              <Text style={[styles.featureDesc, { color: theme.textMuted }]}>
+                Seamlessly organize your catalog into Plan to Watch, currently Watching, and Watched categories.
+              </Text>
+            </View>
+          </View>
+
+          {/* Feature Card 3 */}
+          <View
+            style={[
+              styles.featureCard,
+              { backgroundColor: theme.card, borderColor: theme.cardBorder },
+              theme.cardShadow,
+            ]}
+          >
+            <View style={[styles.featureIconBadge, { backgroundColor: '#FEF3C7' }]}>
+              <Ionicons name="star" size={22} color="#F59E0B" />
+            </View>
+            <View style={styles.featureContent}>
+              <Text style={[styles.featureTitle, { color: theme.text }]}>
+                Rate your favorites
+              </Text>
+              <Text style={[styles.featureDesc, { color: theme.textMuted }]}>
+                Star memorable titles with instant favorite toggling and assign numerical ratings from 0 to 5.
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* Status Card */}
-        <View style={styles.statusCard}>
-          <View style={styles.statusHeaderRow}>
-            <View style={styles.statusDot} />
-            <Text style={styles.statusTitle}>Hệ Thống Sẵn Sàng Nhận Đề Thi PE</Text>
-          </View>
-          <Text style={styles.statusText}>
-            Ngày mai khi bạn gửi đề bài (Movies, Tasks, Products, Notes...), hệ thống sẽ sinh ngay toàn bộ CRUD, Realtime onSnapshot, Sort A-Z, và Form Validation đúng theo cấu trúc chuẩn.
-          </Text>
-        </View>
+        {/* Call to Action CTA */}
+        <View style={styles.ctaContainer}>
+          <TouchableOpacity
+            style={[styles.primaryCtaBtn, { backgroundColor: theme.primary }, theme.buttonShadow]}
+            onPress={() => navigation.navigate('Register')}
+          >
+            <Text style={styles.primaryCtaBtnText}>Get Started — It's Free</Text>
+          </TouchableOpacity>
 
-        {/* Architecture Reminder Card */}
-        <View style={styles.guideCard}>
-          <View style={styles.guideHeader}>
-            <Ionicons name="layers-outline" size={20} color="#1D4ED8" />
-            <Text style={styles.guideTitle}>Cấu trúc kiến trúc chuẩn (Feature-Based):</Text>
-          </View>
-          <Text style={styles.guideStep}>
-            • <Text style={styles.boldText}>src/features/[entity]/api:</Text> CRUD Firestore chuẩn (thêm, sửa, xóa, toggle).
-          </Text>
-          <Text style={styles.guideStep}>
-            • <Text style={styles.boldText}>src/features/[entity]/hooks:</Text> onSnapshot realtime lắng nghe theo userId.
-          </Text>
-          <Text style={styles.guideStep}>
-            • <Text style={styles.boldText}>src/features/[entity]/components:</Text> Form, CardItem, Filters, Summary.
-          </Text>
-          <Text style={styles.guideStep}>
-            • <Text style={styles.boldText}>src/features/[entity]/screens:</Text> ListScreen, DetailScreen.
-          </Text>
+          <TouchableOpacity
+            style={[styles.secondaryCtaBtn, { borderColor: theme.cardBorder }]}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={[styles.secondaryCtaBtnText, { color: theme.text }]}>
+              Already have an account? Sign In
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
-
-      {/* Modern Custom Alert Dialog */}
-      <ConfirmDialog
-        visible={showLogoutModal}
-        iconName="log-out-outline"
-        title="Sign Out"
-        message="Are you sure you want to sign out from your account?"
-        confirmText="Sign Out"
-        cancelText="Cancel"
-        variant="danger"
-        loading={loggingOut}
-        onConfirm={handleConfirmLogout}
-        onCancel={() => setShowLogoutModal(false)}
-      />
     </SafeAreaView>
   );
 };
@@ -141,171 +160,154 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F8FAFC',
   },
-  container: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xxxl,
-  },
-  topBar: {
+  topHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    backgroundColor: '#FFFFFF',
   },
-  userProfile: {
+  brandRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.xs,
   },
-  avatarCircle: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#DBEAFE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  greetingText: {
-    ...typography.caption,
-    color: colors.textMuted,
-  },
-  usernameText: {
-    ...typography.bodyBold,
-    color: colors.text,
-    fontSize: 17,
-  },
-  logoutButton: {
-    width: 44, // Touch target chuẩn 44pt
-    height: 44,
+  logoBadge: {
+    width: 34,
+    height: 34,
     borderRadius: radius.md,
-    backgroundColor: '#FEE2E2',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroCard: {
-    backgroundColor: colors.white,
-    borderRadius: radius.xl,
-    padding: spacing.xl,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-    marginBottom: spacing.lg,
+  headerAppName: {
+    ...typography.h3,
+    fontSize: 18,
+    fontWeight: '800',
   },
-  heroIconBadge: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#EFF6FF',
+  headerAuthButtons: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  headerLoginBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    borderRadius: radius.full,
+    borderWidth: 1,
+  },
+  headerLoginText: {
+    ...typography.captionBold,
+    fontSize: 13,
+  },
+  headerRegisterBtn: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: 7,
+    borderRadius: radius.full,
+  },
+  headerRegisterText: {
+    ...typography.captionBold,
+    color: '#FFFFFF',
+    fontSize: 13,
+  },
+  scrollContent: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xxl,
+  },
+  heroSection: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+  },
+  heroIconCircle: {
+    width: 84,
+    height: 84,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
   },
-  heroEmoji: {
-    fontSize: 32,
-  },
-  heroTitle: {
+  homeTitle: {
     ...typography.h1,
-    color: colors.text,
-    textAlign: 'center',
-  },
-  heroSubtitle: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.xs,
-    marginBottom: spacing.lg,
-    lineHeight: 22,
-  },
-  accountInfoBox: {
-    width: '100%',
-    backgroundColor: '#F8FAFC',
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    gap: spacing.xs + 2,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoIcon: {
-    marginRight: 6,
-  },
-  infoLabel: {
-    ...typography.captionBold,
-    color: colors.secondary,
-    width: 60,
-  },
-  infoValue: {
-    ...typography.caption,
-    color: colors.text,
-    flex: 1,
-    fontWeight: '500',
-  },
-  statusCard: {
-    backgroundColor: '#F0FDF4',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: '#BBF7D0',
-    marginBottom: spacing.lg,
-  },
-  statusHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs + 2,
+    fontSize: 32,
+    fontWeight: '900',
     marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
-  statusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#16A34A',
+  homeDescription: {
+    ...typography.body,
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: spacing.md,
   },
-  statusTitle: {
-    ...typography.captionBold,
-    color: '#15803D',
-    fontSize: 14,
+  featuresSection: {
+    marginTop: spacing.md,
   },
-  statusText: {
-    ...typography.caption,
-    color: '#166534',
-    lineHeight: 20,
+  sectionHeading: {
+    ...typography.h3,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: spacing.md,
   },
-  guideCard: {
-    backgroundColor: '#EFF6FF',
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    borderWidth: 1,
-    borderColor: '#BFDBFE',
-  },
-  guideHeader: {
+  featureCard: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
+    alignItems: 'flex-start',
+    padding: spacing.md,
+    borderRadius: radius.xl,
     marginBottom: spacing.sm,
+    borderWidth: 1,
+    gap: spacing.md,
   },
-  guideTitle: {
-    ...typography.captionBold,
-    color: '#1E40AF',
+  featureIconBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  guideStep: {
+  featureContent: {
+    flex: 1,
+  },
+  featureTitle: {
+    ...typography.h3,
+    fontSize: 15,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  featureDesc: {
     ...typography.caption,
-    color: '#1E3A8A',
-    marginBottom: 6,
+    fontSize: 13,
     lineHeight: 18,
   },
-  boldText: {
-    fontWeight: '700',
-    color: '#1E40AF',
+  ctaContainer: {
+    marginTop: spacing.xl,
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
+  primaryCtaBtn: {
+    width: '100%',
+    height: 52,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  primaryCtaBtnText: {
+    ...typography.bodyBold,
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  secondaryCtaBtn: {
+    width: '100%',
+    height: 48,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  secondaryCtaBtnText: {
+    ...typography.captionBold,
+    fontSize: 14,
   },
 });
