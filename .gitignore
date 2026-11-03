@@ -42,6 +42,11 @@ yarn-error.*
 *.tmp
 ~*.tmp
 
+# submissions
+submission*/
+staging*/
+*.zip
+
 # generated native folders
 /ios
 /android
